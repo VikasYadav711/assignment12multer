@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Website</title>
+</head>
+<body style="background-color: aqua;">
+  <%- include("header") %>
+  <div class="content">
+    <h1 style="text-align: center; background-color: rgb(193, 59, 59); color: black; font-weight: bold">
+      Welcome in the Todo Application !
+    </h1>
+    <h2 style="text-align: center; background-color: yellowgreen;">Do your work as per you selected the priority</h2>
+    <div style="text-align: center">
+      <form action="/todo" method="POST" id="todoForm" enctype="multipart/form-data">
+        <input id="userInput" placeholder="Enter the work" />
+      
+        <select id="prioritySelector">
+          <option value="high">HIGH</option>
+          <option value="medium">MEDIUM</option>
+          <option value="low">LOW</option>
+        </select>
+        <input placeholder="Choose Image" type="file" id="pic" name="pic" required/>
+        <button type="button" id="submitTodo" style="background-color: red; color: yellow;">Add TODO</button>
+      </form>
+    </div>
+
+    <div id="todosContainer" style="text-align: center;">
+      <!-- Render the todos here -->
+     <%- include("database")%>
+    </div>
+
+    <a href="/logout" id="logoutButton" style="position: absolute; top: 10px; right: 20px; color: red">Logout</a>
+
+  </div>
+</body>
+<script >    // Client-side JavaScript logic for handling todo operations
+  const submitTodoNode = document.getElementById("submitTodo");
+  const userInputNode = document.getElementById("userInput");
+  const prioritySelectorNode = document.getElementById("prioritySelector");
+  const todosContainerNode = document.getElementById("todosContainer");
+  const pictureSelector=document.getElementById("pic");
+  submitTodoNode.addEventListener("click", function () {
+    const todoText = userInputNode.value;
+    const priority = prioritySelectorNode.value;
+    const picture=pictureSelector.files[0];
+    console.log(picture);
+    if (!todoText || !priority) {
+      alert("Please enter a todo");
+      return;
+    }
+
+    // Send a POST request to the server to add the todo
+    const formData = new FormData();
+    formData.append("todoText", todoText);
+    formData.append("priority", priority);
+    formData.append("pic", picture);
+
+    // Send a POST request to the server to add the todo
+    fetch("/todo", {
+      method: "POST",
+      body: formData, // Use the FormData object as the body
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Reload the page to update the todo list
+        location.reload();
+      })
+      .catch((error) => {
+        console.error("Error adding todo:", error);
+      });
+  });
+
+  function updateStatus(id) {
+    const checkbox = document.getElementById(id);
+
+    // Send a PATCH request to the server to update the todo status
+    fetch(`/update-todo/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        completed: checkbox.checked,
+      }),
+    })
+      .then((response) => response.text())
+      .then((data) => {
+        // Update the todo status on the client side
+        const todoTextNode = checkbox.parentElement.querySelector("span");
+        if (checkbox.checked) {
+          todoTextNode.style.textDecoration = "line-through";
+        } else {
+          todoTextNode.style.textDecoration = "none";
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating todo status:", error);
+      });
+  }
+
+  function deleteTodo(id) {
+    // Send a DELETE request to the server to delete the todo
+    fetch(`/delete-todo/${id}`, {
+      method: "DELETE",
+    })
+      .then((response) => response.text())
+      .then((data) => {
+        // Remove the deleted todo from the client-side todo list
+        const todoItemDiv = document.getElementById(id).parentElement;
+        todoItemDiv.remove();
+      })
+      .catch((error) => {
+        console.error("Error deleting todo:", error);
+      });
+  }</script>
+
+</html>
